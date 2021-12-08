@@ -1,0 +1,132 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <div class="container">
+        <!-- Start of message box-->
+        {% if message != None %}
+            <div class="alert {% if 'Error' in message %} alert-danger {% else %} alert-success {% endif %}" role="alert">
+                {{ message }}
+            </div>
+        {% endif %}
+        <!-- End of message box -->
+
+        <!-- Auction is closed, display winner if user is logged in -->
+        {% if listing.active == False %}
+            <div class="alert alert-danger" role="alert">
+                This auction has closed!
+            </div>
+            {% if winner.user == user %}
+                <div class="alert alert-success" role="alert">
+                    You have won the auction!
+                </div>  
+            {% endif %}
+        {% endif %}
+        <!-- End -->
+
+        <div class="row justify-content-center">
+            {% if listing.image %}
+                <img src="{{ listing.image.url }}" alt="{{ listing.image }}" height="500px" width="auto">
+            {% endif %}
+        </div>
+        <div class="row justify-content-center m-1">
+            <h3><u>{{ listing.title }}</u></h3>
+        </div>
+        <div class="row justify-content-center m-1">
+            <b>Price:</b>&nbsp;
+            {% if listing.highest_bid > listing.starting_bid%}
+                ${{ listing.highest_bid }}
+            {% else %}
+                ${{ listing.starting_bid }}
+            {% endif %}
+        </div>
+        <div class="row justify-content-center m-1">
+            <b>Description:</b>&nbsp;{{ listing.description }}
+        </div>
+        {% if listing.category %}
+            <div class="row justify-content-center m-1">
+                <b>Category:</b>&nbsp;{{ listing.category }}
+            </div>
+        {% endif %}
+        {% if user.is_authenticated %}
+        <!-- Start of Watchlist -->
+            <form action="{% url 'change_watchlist' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="listing" value="{{ listing.id }}">
+                {% if not watchlist %}
+                    <input type="hidden" name="type" value="add">
+                    <div class="row justify-content-center m-2">
+                        <input type="submit" value="Add to watchlist" class="btn btn-primary">
+                    </div>
+                {% else %}
+                    <input type="hidden" name="type" value="remove">
+                    <div class="row justify-content-center m-2">
+                        <input type="submit" value="Remove from watchlist" class="btn btn-primary">
+                    </div>
+                {% endif %}
+            </form>
+        <!-- End of Watchlist -->
+
+            {% if listing.active == True %}
+            <!-- Start of bid -->
+                <form action="{% url 'bid' %}" method="POST" class="form-inline justify-content-center">
+                    {% csrf_token%}
+                    <input type="hidden" name="listing" value="{{ listing.id }}">
+                    <div class="form-group">
+                        {{ bid }}
+                        <input type="submit" value="Bid" class="btn btn-success m-2">
+                    </div>
+                </form>
+            <!-- End of bid -->
+
+            <!-- Start of close auction -->
+                {% if user.id == listing.creator_id %}
+                    <form action="{% url 'close' %}" method="POST" class="form-inline justify-content-center">
+                        {% csrf_token%}
+                        <input type="hidden" name="listing" value="{{ listing.id }}">
+                        <input type="submit" value="Close Auction" class="btn btn-danger m-2">
+                    </form>
+                {% endif %}
+            <!-- End of close auction -->
+            {% endif %}
+            
+            <hr />
+
+        {% endif %}
+        
+        
+            <h3 class="pt-3"><u>Comments:</u></h2>
+            <!-- Start of comments -->
+            {% for comment in comments %}
+                <div class="border border-dark d-inline-flex p-3 m-2">
+                    <div style="font-weight:bold" class="d-inline-flex mr-2">
+                        {{ comment.user }}:
+                    </div>
+                    <div class="d-inline-flex">
+                        {{ comment.comment }}
+                    </div>
+                </div>
+            {% endfor %}
+            <hr>
+        {% if user.is_authenticated %}
+            <form action="{% url 'comment' %}" method="POST" class="form-inline">
+                {% csrf_token %}
+                <input type="hidden" name="listing" value="{{ listing.id }}">
+                <div>
+                    {{ commentForm.errors }}
+                </div>
+                <div class="d-flex flex-row align-top">
+                    <div class="p-2">
+                        <b>Create a comment:</b>
+                    </div>
+                    <div class="p-2">
+                        {{ commentForm }}
+                    </div>
+                    <div class="p-2 align-self-end">
+                        <input type="Submit" class="btn btn-primary">
+                    </div>
+                </div>
+            </form>
+            <!-- End of comments -->
+        {% endif %}
+    </div>
+{% endblock %}
